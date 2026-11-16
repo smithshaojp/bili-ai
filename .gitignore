@@ -1,0 +1,15 @@
+# 虚拟环境 / 缓存
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# 本地数据与密钥 —— 绝不要提交
+data/
+config.json
+.env
+.env.*
+!.env.example
+*.key
+*.pem

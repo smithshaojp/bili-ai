@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B站视频AI助手</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">B站视频AI助手</div>
+  <form id="addForm" class="addform">
+    <input id="urlInput" placeholder="粘贴 B站 视频链接 / BV号 / b23.tv 短链接" autocomplete="off">
+    <label class="chk" title="不用B站字幕，下载音频在本地重新识别"><input type="checkbox" id="forceAsr"> 强制本地转写</label>
+    <button type="submit" class="primary">总结</button>
+  </form>
+  <button id="settingsBtn" class="ghost" title="设置">⚙ 设置</button>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="side-title">历史记录</div>
+    <div id="history"></div>
+  </aside>
+
+  <main id="main">
+    <div id="empty" class="empty">
+      <h2>贴一个 B站 链接开始</h2>
+      <p>有字幕的视频直接用字幕，几秒出结果；没有字幕的会下载音频在本机转写。</p>
+      <div id="setupHint"></div>
+    </div>
+
+    <div id="view" class="view hidden">
+      <section class="left">
+        <div class="player-wrap"><iframe id="player" allowfullscreen allow="autoplay; fullscreen" referrerpolicy="no-referrer" scrolling="no"></iframe></div>
+        <div class="vmeta">
+          <h1 id="vTitle"></h1>
+          <div class="sub">
+            <span id="vOwner"></span><span id="vDur"></span><span id="vSrc"></span>
+            <a id="vLink" target="_blank" rel="noopener">在B站打开 ↗</a>
+          </div>
+        </div>
+        <div id="status" class="status hidden"><div class="spinner"></div><span id="statusText"></span><div class="bar"><div id="barFill"></div></div></div>
+        <div id="errorBox" class="errorbox hidden"></div>
+        <div class="tabs">
+          <button data-tab="summary" class="tab active">总结</button>
+          <button data-tab="transcript" class="tab">文字稿</button>
+          <div class="tab-actions">
+            <button id="resumBtn" class="ghost small">重新总结</button>
+            <button id="asrBtn" class="ghost small" title="不用B站字幕，下载音频本地识别">本地重新转写</button>
+            <a id="exportBtn" class="ghost small btnlike">导出 Markdown</a>
+            <button id="delBtn" class="ghost small danger">删除</button>
+          </div>
+        </div>
+        <div id="summary" class="md panel"></div>
+        <div id="transcript" class="panel transcript hidden"></div>
+      </section>
+
+      <section class="right">
+        <div class="chat-head"><span>向 AI 提问</span><button id="clearChat" class="ghost small">清空对话</button></div>
+        <div id="chatList" class="chatlist"></div>
+        <div id="suggest" class="suggest"></div>
+        <form id="chatForm" class="chatform">
+          <textarea id="chatInput" rows="2" placeholder="问点什么…（Enter 发送，Shift+Enter 换行）"></textarea>
+          <button type="submit" class="primary" id="sendBtn">发送</button>
+        </form>
+      </section>
+    </div>
+  </main>
+</div>
+
+<dialog id="settings">
+  <form method="dialog" id="settingsForm">
+    <h2>设置</h2>
+    <p class="note">所有设置只保存在你电脑上的 <code>config.json</code>，不会上传到任何地方（除了把 Key 发给 DeepSeek 本身）。</p>
+
+    <h3>DeepSeek</h3>
+    <label>API Key <span id="keyState" class="state"></span>
+      <input id="cfgKey" type="password" placeholder="留空 = 不修改（已检测到环境变量会自动使用）" autocomplete="off"></label>
+    <div class="row">
+      <label>模型
+        <select id="cfgModel">
+          <option value="deepseek-chat">deepseek-chat（快，推荐）</option>
+          <option value="deepseek-reasoner">deepseek-reasoner（思考型，慢但更深入）</option>
+        </select></label>
+      <label>接口地址 <input id="cfgBase" placeholder="https://api.deepseek.com"></label>
+    </div>
+
+    <h3>B站登录（用于获取 AI 字幕）</h3>
+    <label>SESSDATA <span id="sessState" class="state"></span>
+      <input id="cfgSess" type="password" placeholder="留空 = 不修改" autocomplete="off"></label>
+    <details class="howto"><summary>怎么获取 SESSDATA？</summary>
+      <ol>
+        <li>用 Chrome/Edge/Safari 登录 bilibili.com</li>
+        <li>按 <code>⌥⌘I</code> 打开开发者工具 → Application（应用）→ Cookies → https://www.bilibili.com</li>
+        <li>找到名为 <code>SESSDATA</code> 的一行，复制它的 Value 粘贴到这里</li>
+      </ol>
+      <p>SESSDATA 相当于你的登录状态，不要发给任何人。退出B站登录后它会失效，需要重新复制。</p>
+    </details>
+    <button type="button" id="checkBili" class="ghost small">检测登录状态</button> <span id="biliState" class="state"></span>
+
+    <h3>本地语音转写（没有字幕时使用）</h3>
+    <div class="row">
+      <label>引擎 <span id="engState" class="state"></span>
+        <select id="cfgEngine">
+          <option value="auto">自动（Apple 芯片用 mlx，否则 faster-whisper）</option>
+          <option value="mlx">mlx-whisper（Apple 芯片 GPU）</option>
+          <option value="faster-whisper">faster-whisper（CPU）</option>
+        </select></label>
+      <label>模型 <input id="cfgAsrModel" placeholder="留空用默认"></label>
+    </div>
+    <p class="note" id="asrHint"></p>
+    <label class="chk"><input type="checkbox" id="cfgMirror"> 使用 hf-mirror.com 镜像下载转写模型（国内网络建议勾选）</label>
+
+    <div class="dlg-actions">
+      <button type="button" id="clearKeys" class="ghost small danger">清除已保存的 Key 和 SESSDATA</button>
+      <span style="flex:1"></span>
+      <button value="cancel" class="ghost">取消</button>
+      <button id="saveSettings" value="default" class="primary">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
