@@ -1,13 +1,46 @@
-# B站视频AI助手
+<div align="center">
 
-贴一个 B站 链接 → 自动拿字幕（没字幕就本机语音转写）→ DeepSeek 生成带时间戳的总结 → 针对视频自由提问。
-所有数据（设置、总结、文字稿、对话）都只存在本机。
+# B站视频AI助手 · bili-ai
+
+**贴一个 B站 链接，10 秒拿到带时间戳的总结，还能针对视频自由提问。**
+
+本地运行 · 数据不上传 · 没字幕也能用本机 Whisper 转写
+
+![License](https://img.shields.io/badge/license-MIT-green)
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
+![LLM](https://img.shields.io/badge/LLM-DeepSeek-4D6BFE)
+
+简体中文 | [English](README.en.md)
+
+</div>
+
+![bili-ai 截图：左侧总结、右侧问答，时间戳可点击跳转](docs/screenshot.png)
+
+## 为什么做这个
+
+一小时的教程、讲座、播客，真正有用的可能只有几分钟。bili-ai 先帮你把视频读一遍：
+
+- **先看总结再决定看不看**：一句话总结、核心要点、按话题划分的大纲，每条都带时间戳
+- **点时间戳直接跳转**：左侧播放器跳到对应位置，只看你关心的那一段
+- **像问老师一样提问**：“第 20 分钟那个公式是什么意思？”“作者的结论有什么前提？”回答同样附带出处时间
+- **没有字幕也能用**：自动下载音频，在你的 Mac 上用 Whisper 转写（Apple 芯片走 GPU，1 小时视频几分钟）
+- **隐私友好**：服务只跑在 `127.0.0.1`，历史、文字稿、对话都存在本机，只有文字稿会发给你自己配置的 DeepSeek 接口
+
+## 快速开始
+
+```bash
+git clone https://github.com/smithshaojp/bili-ai.git ~/bili-ai
+cd ~/bili-ai && bash start.command
+```
+
+浏览器打开 http://127.0.0.1:8765 ，在右上角「设置」填入 DeepSeek API Key（或提前 `export DEEPSEEK_API_KEY=...`），贴链接即可。详细说明见下文。
 
 ## 启动（Mac）
 
 1. 下载或克隆本仓库，比如：
    ```bash
-   git clone <本仓库地址> ~/bili-ai
+   git clone https://github.com/smithshaojp/bili-ai.git ~/bili-ai
    ```
 2. 打开「终端」，运行：
    ```bash
@@ -62,6 +95,22 @@
 
 - 本仓库不包含任何 API Key、Cookie 或个人数据。你的 Key 和 SESSDATA 只保存在本机的 `config.json` / `.env`，这两个文件都在 `.gitignore` 里。
 - 如果你 fork 后自己改代码，提交前请确认没有把 `config.json`、`.env`、`data/` 加进去。
+
+## 工作原理
+
+```
+B站链接 → 解析 BV号/分P → 取字幕（CC 字幕 → B站AI字幕 → 本机 Whisper 转写）
+       → 合并成带时间戳的文字稿 → DeepSeek 生成总结（超长视频先分段提炼）
+       → 问答时把文字稿 + 总结作为上下文（超长视频按相关度检索片段）
+```
+
+技术栈：FastAPI + 原生 JS 前端，`openai` SDK 调 DeepSeek，`mlx-whisper` / `faster-whisper` 做语音识别，PyAV 解码音频（不需要装 ffmpeg）。
+
+## 参与贡献
+
+欢迎提 Issue 和 PR，比如：支持 Windows / Linux 启动脚本、接入更多模型（OpenAI 兼容接口改 `base_url` 即可）、YouTube 支持、更好的长视频检索。
+
+如果这个项目帮你省了时间，点个 ⭐ 就是最大的鼓励。
 
 ## 声明
 
