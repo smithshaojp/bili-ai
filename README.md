@@ -106,6 +106,10 @@ B站链接 → 解析 BV号/分P → 取字幕（CC 字幕 → B站AI字幕 → 
 
 技术栈：FastAPI + 原生 JS 前端，`openai` SDK 调 DeepSeek，`mlx-whisper` / `faster-whisper` 做语音识别，PyAV 解码音频（不需要装 ffmpeg）。
 
+## 支持的平台
+
+目前**只支持 B站**。YouTube、抖音、小红书等其他平台后续随缘更新，欢迎提 Issue 告诉我你最想要哪个，也欢迎直接提 PR。
+
 ## 参与贡献
 
 欢迎提 Issue 和 PR，比如：支持 Windows / Linux 启动脚本、接入更多模型（OpenAI 兼容接口改 `base_url` 即可）、YouTube 支持、更好的长视频检索。

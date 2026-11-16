@@ -56,6 +56,10 @@ Bilibili link → resolve BV id / part → subtitles (uploader CC → Bilibili A
 
 Stack: FastAPI, vanilla JS, the `openai` SDK (pointed at DeepSeek), `mlx-whisper` / `faster-whisper`, and PyAV for audio decoding (no ffmpeg needed).
 
+## Supported platforms
+
+Only **Bilibili** for now. Other platforms (YouTube, etc.) may come later. Open an issue to vote for the one you want, or send a PR.
+
 ## Contributing
 
 Issues and PRs are welcome: Windows/Linux launch scripts, more LLM providers, YouTube support, better long-video retrieval.
